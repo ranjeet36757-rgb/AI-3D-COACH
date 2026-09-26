@@ -25,11 +25,13 @@ jobs:
         gradle wrapper --gradle-version 8.6
         chmod +x gradlew
 
-    # यह कमांड क्लाउड में 3D मॉडल डाउनलोड करके सही फोल्डर में रख देगी
+    # असली और वेरिफाइड 3D ह्यूमन मॉडल डाउनलोड करना
     - name: Auto-Download 3D Model
       run: |
         mkdir -p app/src/main/assets/models
-        curl -L -o app/src/main/assets/models/human_body.glb https://github.com/KhronosGroup/glTF-Sample-Models/raw/master/2.0/CesiumMan/glTF-Binary/CesiumMan.glb
+        curl -fSL -o app/src/main/assets/models/human_body.glb "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/CesiumMan/glTF-Binary/CesiumMan.glb" || \
+        curl -fSL -o app/src/main/assets/models/human_body.glb "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMan/glTF-Binary/CesiumMan.glb"
+        ls -lh app/src/main/assets/models/human_body.glb
 
     - name: Build Debug APK
       run: ./gradlew assembleDebug --stacktrace
