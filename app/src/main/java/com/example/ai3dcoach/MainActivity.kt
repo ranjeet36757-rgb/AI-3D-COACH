@@ -15,7 +15,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.sceneview.Scene
-import io.github.sceneview.math.Position
 import io.github.sceneview.node.ModelNode
 import io.github.sceneview.rememberEngine
 import io.github.sceneview.rememberModelLoader
@@ -69,24 +68,23 @@ fun WorkoutSplitScreen() {
             ) {
                 val engine = rememberEngine()
                 val modelLoader = rememberModelLoader(engine)
+                val modelNode = remember(modelLoader) {
+                    modelLoader.createModelInstance(
+                        assetFileLocation = "models/human_body.glb"
+                    )?.let {
+                        ModelNode(
+                            modelInstance = it,
+                            scaleToUnits = 1.0f
+                        )
+                    }
+                }
 
                 Scene(
                     modifier = Modifier.fillMaxSize(),
                     engine = engine,
                     modelLoader = modelLoader,
-                    onSessionCreated = { sceneView ->
-                        // कैमरा दूरी सेट करना
-                        sceneView.cameraNode.position = Position(x = 0f, y = 1.0f, z = 2.5f)
-                    }
-                ) {
-                    // डाउनलोड किया गया 3D मॉडल लोड करना
-                    ModelNode(
-                        modelInstance = modelLoader.createModelInstance(
-                            assetFileLocation = "models/human_body.glb"
-                        ),
-                        scaleToUnits = 1.0f
-                    )
-                }
+                    childNodes = listOfNotNull(modelNode)
+                )
             }
 
             // दायां पैनल: वर्कआउट एक्शन गाइड
