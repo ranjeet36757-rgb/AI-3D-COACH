@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.sceneview.Scene
@@ -42,7 +43,6 @@ fun WorkoutSplitScreen() {
             .background(Color(0xFF121212))
             .padding(12.dp)
     ) {
-        // हेडर
         Text(
             text = "AI 3D COACH - $activeMuscle",
             color = Color.White,
@@ -51,14 +51,13 @@ fun WorkoutSplitScreen() {
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        // स्प्लिट स्क्रीन (50% - 50%)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // बायां पैनल: 3D मॉडल व्यूअर
+            // बायां पैनल: क्रैश-प्रूफ 3D मॉडल व्यू
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -66,25 +65,7 @@ fun WorkoutSplitScreen() {
                     .background(Color(0xFF1E1E1E), RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                val engine = rememberEngine()
-                val modelLoader = rememberModelLoader(engine)
-                val modelNode = remember(modelLoader) {
-                    modelLoader.createModelInstance(
-                        assetFileLocation = "models/human_body.glb"
-                    )?.let {
-                        ModelNode(
-                            modelInstance = it,
-                            scaleToUnits = 1.0f
-                        )
-                    }
-                }
-
-                Scene(
-                    modifier = Modifier.fillMaxSize(),
-                    engine = engine,
-                    modelLoader = modelLoader,
-                    childNodes = listOfNotNull(modelNode)
-                )
+                Safe3DViewer()
             }
 
             // दायां पैनल: वर्कआउट एक्शन गाइड
@@ -115,7 +96,6 @@ fun WorkoutSplitScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // कंट्रोल कार्ड
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = Color(0xFF242424)),
@@ -148,5 +128,49 @@ fun WorkoutSplitScreen() {
                 }
             }
         }
+    }
+}
+
+@Composable
+fun Safe3DViewer() {
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var modelNode by remember { mutableStateOf<ModelNode?>(null) }
+
+    val engine = rememberEngine()
+    val modelLoader = rememberModelLoader(engine)
+
+    LaunchedEffect(Unit) {
+        try {
+            val instance = modelLoader.createModelInstance("models/human_body.glb")
+            if (instance != null) {
+                modelNode = ModelNode(modelInstance = instance, scaleToUnits = 1.0f)
+            } else {
+                errorMessage = "3D फ़ाइल नहीं मिली"
+            }
+        } catch (e: Exception) {
+            errorMessage = "लोडिंग एरर: ${e.message}"
+        } finally {
+            isLoading = false
+        }
+    }
+
+    if (isLoading) {
+        CircularProgressIndicator(color = Color(0xFFFF5252))
+    } else if (errorMessage != null) {
+        Text(
+            text = errorMessage ?: "",
+            color = Color(0xFFFF8A80),
+            fontSize = 12.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(8.dp)
+        )
+    } else {
+        Scene(
+            modifier = Modifier.fillMaxSize(),
+            engine = engine,
+            modelLoader = modelLoader,
+            childNodes = listOfNotNull(modelNode)
+        )
     }
 }
