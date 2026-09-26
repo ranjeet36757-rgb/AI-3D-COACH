@@ -57,7 +57,7 @@ fun WorkoutSplitScreen() {
                 .weight(1f),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // बायां पैनल: क्रैश-प्रूफ 3D मॉडल व्यू
+            // बायां पैनल: 3D मॉडल
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -68,7 +68,7 @@ fun WorkoutSplitScreen() {
                 Safe3DViewer()
             }
 
-            // दायां पैनल: वर्कआउट एक्शन गाइड
+            // दायां पैनल: वर्कआउट एक्शन
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -140,37 +140,44 @@ fun Safe3DViewer() {
     val engine = rememberEngine()
     val modelLoader = rememberModelLoader(engine)
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(modelLoader) {
         try {
-            val instance = modelLoader.createModelInstance("models/human_body.glb")
+            val instance = modelLoader.createModelInstance(
+                assetFileLocation = "models/human_body.glb"
+            )
             if (instance != null) {
-                modelNode = ModelNode(modelInstance = instance, scaleToUnits = 1.0f)
+                modelNode = ModelNode(
+                    modelInstance = instance,
+                    scaleToUnits = 1.0f
+                )
             } else {
-                errorMessage = "3D फ़ाइल नहीं मिली"
+                errorMessage = "3D फ़ाइल लोड नहीं हुई"
             }
-        } catch (e: Exception) {
-            errorMessage = "लोडिंग एरर: ${e.message}"
+        } catch (e: Throwable) {
+            errorMessage = "एरर: ${e.javaClass.simpleName} - ${e.message ?: "File format issue"}"
         } finally {
             isLoading = false
         }
     }
 
-    if (isLoading) {
-        CircularProgressIndicator(color = Color(0xFFFF5252))
-    } else if (errorMessage != null) {
-        Text(
-            text = errorMessage ?: "",
-            color = Color(0xFFFF8A80),
-            fontSize = 12.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(8.dp)
-        )
-    } else {
-        Scene(
-            modifier = Modifier.fillMaxSize(),
-            engine = engine,
-            modelLoader = modelLoader,
-            childNodes = listOfNotNull(modelNode)
-        )
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        if (isLoading) {
+            CircularProgressIndicator(color = Color(0xFFFF5252))
+        } else if (errorMessage != null) {
+            Text(
+                text = errorMessage ?: "",
+                color = Color(0xFFFF8A80),
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(8.dp)
+            )
+        } else {
+            Scene(
+                modifier = Modifier.fillMaxSize(),
+                engine = engine,
+                modelLoader = modelLoader,
+                childNodes = listOfNotNull(modelNode)
+            )
+        }
     }
 }
