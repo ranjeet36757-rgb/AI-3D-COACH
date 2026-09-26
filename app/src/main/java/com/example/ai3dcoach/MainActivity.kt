@@ -14,6 +14,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.sceneview.Scene
+import io.github.sceneview.math.Position
+import io.github.sceneview.node.ModelNode
+import io.github.sceneview.rememberEngine
+import io.github.sceneview.rememberModelLoader
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,48 +43,53 @@ fun WorkoutSplitScreen() {
             .background(Color(0xFF121212))
             .padding(12.dp)
     ) {
-        // टॉप हेडर
+        // हेडर
         Text(
-            text = "AI 3D COACH - $activeMuscle Workout",
+            text = "AI 3D COACH - $activeMuscle",
             color = Color.White,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        // स्प्लिट-स्क्रीन सेक्शन (50% - 50% चौड़ाई)
+        // स्प्लिट स्क्रीन (50% - 50%)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // बायां पैनल: 3D मसल एनाटॉमी व्यू
+            // बायां पैनल: 3D मॉडल व्यूअर
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .background(Color(0xFF1E1E1E), RoundedCornerShape(12.dp))
-                    .padding(8.dp),
+                    .background(Color(0xFF1E1E1E), RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "3D MUSCLE MAP",
-                        color = Color(0xFFFF5252),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text = "Target: $activeMuscle\n(Highlighted Red)",
-                        color = Color.LightGray,
-                        fontSize = 12.sp
+                val engine = rememberEngine()
+                val modelLoader = rememberModelLoader(engine)
+
+                Scene(
+                    modifier = Modifier.fillMaxSize(),
+                    engine = engine,
+                    modelLoader = modelLoader,
+                    onSessionCreated = { sceneView ->
+                        // कैमरा दूरी सेट करना
+                        sceneView.cameraNode.position = Position(x = 0f, y = 1.0f, z = 2.5f)
+                    }
+                ) {
+                    // डाउनलोड किया गया 3D मॉडल लोड करना
+                    ModelNode(
+                        modelInstance = modelLoader.createModelInstance(
+                            assetFileLocation = "models/human_body.glb"
+                        ),
+                        scaleToUnits = 1.0f
                     )
                 }
             }
 
-            // दायां पैनल: वर्कआउट एक्शन वीडियो / गाइड
+            // दायां पैनल: वर्कआउट एक्शन गाइड
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -97,7 +107,7 @@ fun WorkoutSplitScreen() {
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = "Dumbbell Press / Push-up\nLoop Playing...",
+                        text = "Form & Motion Guide",
                         color = Color.LightGray,
                         fontSize = 12.sp
                     )
@@ -107,7 +117,7 @@ fun WorkoutSplitScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // बॉटम कंट्रोल पैनल: सेट्स, रेप्स और रेस्ट टाइमर
+        // कंट्रोल कार्ड
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = Color(0xFF242424)),
@@ -121,11 +131,7 @@ fun WorkoutSplitScreen() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text(
-                        text = "TARGET GOAL",
-                        color = Color.Gray,
-                        fontSize = 12.sp
-                    )
+                    Text(text = "TARGET GOAL", color = Color.Gray, fontSize = 12.sp)
                     Text(
                         text = "${setsCount}X$repsCount",
                         color = Color.Yellow,
@@ -134,22 +140,13 @@ fun WorkoutSplitScreen() {
                     )
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(
-                        onClick = {
-                            activeMuscle = if (activeMuscle == "Upper Chest") "Triceps" else "Upper Chest"
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252))
-                    ) {
-                        Text("बदलें मसल")
-                    }
-
-                    Button(
-                        onClick = { /* टाइमर लॉजिक */ },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2979FF))
-                    ) {
-                        Text("सेट पूरा")
-                    }
+                Button(
+                    onClick = {
+                        activeMuscle = if (activeMuscle == "Upper Chest") "Triceps" else "Upper Chest"
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252))
+                ) {
+                    Text("बदलें मसल")
                 }
             }
         }
